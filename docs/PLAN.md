@@ -114,8 +114,8 @@ DSH 插件分两半，边界由「谁有权限、谁有 UI」决定：
 
 ### P2 — 生态（v0.3+）
 
-- [ ] Shiny / Quarto 一键预览（子进程 + 端口探测 + 内嵌窗口）。
-- [~] 项目系统：已认 `.Rproj`（`state.project`，设置页「信息 → 项目」显示）；`scriptDir` 跟随项目根仍待做。
+- [x] Shiny / Quarto 预览：`POST /r/api/app/start`（`shiny::runApp` + 空闲端口探测，iframe 内嵌，可停止）、`POST /r/api/quarto/render`；缺 shiny/quarto 时给安装提示。
+- [x] 项目系统（只读）：`state.project` 认 `.Rproj`，设置页显示项目名，`scriptDir` 缺省跟随项目根 `<project>/R`。
 - [ ] 远程 R：SSH 到服务器跑 driver（`R --slave` 远端 TCP 转发）。
 - [ ] webR 后备：本机没装 R 时用 WASM 版跑纯计算型代码（无图形、无包）。
 - [ ] 与 matlab-runner 抽公共层：会话进程管理、变量表、图形条、文件树都可复用。
