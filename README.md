@@ -1,10 +1,14 @@
+[![npm version](https://img.shields.io/npm/v/dsh-r-runner.svg)](https://www.npmjs.com/package/dsh-r-runner)
+[![license](https://img.shields.io/npm/l/dsh-r-runner.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/dsh-r-runner.svg)](package.json)
+
 # dsh-r-runner
 
 Run R inside the DeepSeek Harness sidebar: a persistent R session, a file tree, a
 syntax-highlighted editor, a console, an environment table, and plot thumbnails —
 laid out like RStudio, with the keyboard habits of VS Code.
 
-> Status: v0.1.0, macOS + R 4.6 tested. See [docs/PLAN.md](docs/PLAN.md) for the
+> Status: v0.1.1 on [npm](https://www.npmjs.com/package/dsh-r-runner), macOS + R 4.6 tested. See [docs/PLAN.md](docs/PLAN.md) for the
 > design notes and roadmap.
 
 ![Panel](docs/panel.png)
@@ -14,8 +18,8 @@ the set with ← →, copy the path, or open the PNG in a new tab:
 
 ![Plot viewer](docs/plot.png)
 
-The bottom pane has four tabs — console (with a real prompt), history, help and the
-data viewer:
+The bottom pane has five tabs — console (with a real prompt), history, help, the data
+viewer and the package manager:
 
 ![Data viewer](docs/data.png)
 
