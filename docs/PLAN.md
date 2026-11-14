@@ -100,17 +100,17 @@ DSH 插件分两半，边界由「谁有权限、谁有 UI」决定：
 - [x] 数据查看器：环境表的「表」按钮 / 数据标签页 → 只读表格（前 100 行）。
 - [x] 图形条：点缩略图 → **portal 浮窗**（`react-dom.createPortal` 到 `document.body`，侧栏不会裁切）：适应 ⇄ 100%、← → 切换、原图、复制路径。
 - [x] 图形条：hover 删除单张（`×` / 浮窗「删除」）、「清空」（`POST /r/api/plot/delete|clear`，只动 `.dsh-r-runner/plots/*.png`）、环境面板「清空」（`rm(list = ls())`）。
-- [ ] 「全部图形」网格视图（现在只有横向缩略图条）。
-- [ ] 英文文案接线（`en` 词典已注册，界面主体仍是中文）。
-- [ ] 包管理面板：已载入包的列表 / `install.packages()` 进度。
+- [x] 「全部图形」网格视图（工具条「图形 N」→ 卡片网格，可放大 / 删除）。
+- [x] 英文文案接线：`UI.zh/en` 词典 + 设置页「界面语言」开关（工具条 / 标签页 / 表头 / 状态条 / 图窗 / 包面板）。
+- [x] 包管理面板：已载入 / 已安装（可搜索、一键 `library()`）/ `install.packages()` 独立进程 + 日志 + 缺包提示。
 
 ### P1 — 像 IDE（v0.2）
 
-- [ ] **补全**：桥接 `languageserver`（需 R 包装好）或退一步用 `utils::apropos` + 对象列表做局部补全。
-- [ ] **诊断**：保存时跑 `parse(text=…)` 收集语法错误，显示在行号槽；可选 `lintr`。
-- [ ] **跳转到定义**：函数名 → `getAnywhere()` / 包源码路径。
+- [x] **补全**（轻量版）：对象 + 已载入包导出 + base/关键字，`Ctrl+Space` 或 `.` `$` `::` 触发；`languageserver` 桥仍待做（P2）。
+- [x] **诊断**：编辑后 700ms 跑 `parse(text=…)` + 三条 lint，行号槽圆点 + 状态条计数。
+- [x] **跳转到定义**：`F12` / `⌘`-click → `getAnywhere()` 或 `source()` 文件的 `file:line`（srcref）。
 - [x] 帮助面板：`?fun` / `help("fun")` 的文本渲染（`tools::Rd2txt`，已从 P1 提前做掉）。
-- [ ] Rmd 预览：`rmarkdown::render()` 到临时目录，面板内 iframe 显示。
+- [x] Rmd 预览：`rmarkdown::render()` 到 `.dsh-r-runner/rmd`，面板内 iframe。
 
 ### P2 — 生态（v0.3+）
 

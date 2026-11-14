@@ -71,6 +71,29 @@ try {
   assert.equal(help.ok, true, JSON.stringify(help))
   assert.match(help.text, /Arithmetic Mean|mean/i)
 
+  const completion = await session.complete('mea')
+  assert.equal(completion.ok, true)
+  assert.ok(completion.items.some((item) => item.label === 'mean'), 'completion finds base mean')
+  const namespaced = await session.complete('stats::rno')
+  assert.ok(namespaced.items.some((item) => item.label === 'rnorm'), 'completion resolves pkg:: exports')
+
+  const clean = await session.diagnose('x <- 1')
+  assert.equal(clean.ok, true)
+  const broken = await session.diagnose('f <- function( {')
+  assert.equal(broken.ok, true)
+  assert.equal(broken.problems[0].severity, 'error')
+  assert.equal(broken.problems[0].line, 1)
+
+  const def = await session.definition('mean')
+  assert.equal(def.ok, true)
+  assert.match(def.signature, /^mean\(/, JSON.stringify(def))
+  assert.doesNotMatch(def.signature, /NULL/, JSON.stringify(def))
+
+  const packages = await session.packages()
+  assert.equal(packages.ok, true)
+  assert.ok(packages.loaded.some((item) => item.name === 'base'), 'base is loaded')
+  assert.ok(packages.installed.length > 10, 'the library has packages')
+
   const removed = await session.removeVariable('n')
   assert.equal(removed.ok, true)
 

@@ -244,6 +244,32 @@ function render(node) {
   return `<${node.type}${attributes}>${render(node.children.flat(Infinity))}</${node.type}>`
 }
 
+const PACKAGES_SAMPLE = {
+  ok: true,
+  loaded: [
+    { name: 'base', version: '4.6.2', path: '' },
+    { name: 'stats', version: '4.6.2', path: '' },
+    { name: 'ggplot2', version: '4.0.3', path: '' },
+    { name: 'dplyr', version: '1.1.4', path: '' }
+  ],
+  installed: [
+    { name: 'ggplot2', version: '4.0.3' }, { name: 'dplyr', version: '1.1.4' },
+    { name: 'jsonlite', version: '2.0.0' }, { name: 'rmarkdown', version: '2.30' },
+    { name: 'knitr', version: '1.49' }, { name: 'languageserver', version: '0.3.16' }
+  ],
+  installedAt: '2026-11-14T19:40'
+}
+
+const COMPLETION_SAMPLE = {
+  items: [
+    { label: 'mean', kind: 'function', package: 'base' },
+    { label: 'median', kind: 'function', package: 'stats' },
+    { label: 'mean.POSIXct', kind: 'function', package: 'base' },
+    { label: 'mean.Date', kind: 'function', package: 'base' }
+  ],
+  index: 0, prefix: 'mea', left: 96, top: 214, mode: 'plain'
+}
+
 const HISTORY_SAMPLE = [
   { code: 'df <- iris\nfit <- lm(Sepal.Length ~ Species, data = df)', ok: true, ms: 4, at: '2026-11-14T19:05:12Z' },
   { code: 'summary(fit)', ok: true, ms: 2, at: '2026-11-14T19:05:14Z' },
@@ -320,5 +346,8 @@ writeFileSync('/tmp/rr-settings.html', page('settings', await paint({ useTabInfo
 writeFileSync('/tmp/rr-panel.html', page('panel', await paint({ useTabInfo: () => ({}), t })))
 writeFileSync('/tmp/rr-history.html', page('history', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'history', historyEntries: HISTORY_SAMPLE } })))
 writeFileSync('/tmp/rr-help.html', page('help', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'help', helpTopic: 'lm', helpText: HELP_SAMPLE } })))
+writeFileSync('/tmp/rr-packages.html', page('packages', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'packages', pkgList: PACKAGES_SAMPLE } })))
+writeFileSync('/tmp/rr-complete.html', page('complete', await paint({ useTabInfo: () => ({}), t, preview: { completion: COMPLETION_SAMPLE } })))
+writeFileSync('/tmp/rr-english.html', page('english', await paint({ useTabInfo: () => ({}), t, preview: { lang: 'en' } })))
 writeFileSync('/tmp/rr-data.html', page('data', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'data', dataName: 'df', dataTable: DATA_SAMPLE } })))
 console.log('wrote /tmp/rr-panel.html /tmp/rr-plot.html /tmp/rr-settings.html')

@@ -52,6 +52,28 @@ data viewer:
 - **`.Rmd` runs one chunk.** With the caret inside an `{r}` fenced chunk, `⌘/Ctrl+Enter`
   runs just that chunk (the prompt says `chunk 2/3 · L12-18`); outside any chunk it
   falls back to the first one.
+- **Completion, diagnostics, go-to-definition.** `Ctrl+Space` (or just typing `.`,
+  `$`, `::`) opens a suggestion list built from your objects, the exports of every
+  loaded package and base R; the gutter marks `parse()` errors and a few lint rules
+  (`setwd(`, `attach(`, `=` for assignment), and `F12` / `⌘`-click jumps to a
+  function's source — `source()`d files keep their `file:line`.
+- **Package panel.** The 包 tab lists what is loaded (with versions) and what is
+  installed (searchable, **载入** runs `library()`); `install.packages()` runs in a
+  separate `Rscript --vanilla` process so the session never blocks, and the log stays
+  on screen. If a run failed with *there is no package called 'x'*, the panel offers a
+  one-click install.
+- **Rmd preview.** **预览 Rmd** calls `rmarkdown::render()` into
+  `<workdir>/.dsh-r-runner/rmd` and shows the HTML in an iframe; a failed render shows
+  the tail of the log, and if `rmarkdown` is missing it offers to install it.
+- **All plots grid.** The **图形 N** button opens every plot as a grid, from which you
+  can zoom one or delete it.
+- **Sortable data viewer.** The 数据 tab fetches up to 2000 rows: click a column header
+  to sort (click again to reverse), type in 筛选 to filter across all cells.
+- **Plot window you can resize.** Drag the bottom-right corner, use the zoom slider
+  (10–400 %), **−** / **＋**, **适应 ⇄ 100%**, or **打开原图** (which falls back to
+  copying the path when the browser blocks the new tab).
+- **English UI.** 设置 → 信息 → 界面语言 switches the shell (toolbar, tabs, headers,
+  status bar, plot window) between 中文 and English; the choice is remembered.
 - **Agent tool.** `r_run({ code })` / `r_run({ file })` lets the model run R directly
   and get back the console output plus plot paths.
 
@@ -93,9 +115,16 @@ to the profile manifest; `bin/reload-host.sh` forces the host to re-compose.
 | Run a console command | type in the prompt, `Enter` |
 | Previous / next command | `↑` / `↓` in the prompt |
 | Look up help | 帮助 tab, type a topic, `Enter` |
+| Completion | `Ctrl+Space`, or type after `.` / `$` / `::` |
+| Jump to definition | `F12` or `⌘`-click on a name |
+| Install a package | 包 tab → type a name → `install.packages()` |
+| Render the `.Rmd` | **预览 Rmd** in the toolbar |
 | Run the current `.Rmd` chunk | `⌘/Ctrl+Enter` inside an `{r}` chunk |
 | Enlarge a plot | click its thumbnail (floating window) |
 | Close / browse the plot window | `Esc` / `←` `→` / `0` (fit ⇄ 100 %) |
+| Zoom a plot | the slider in the window bar, or `−` / `＋` |
+| Resize the plot window | drag its bottom-right corner |
+| All plots | **图形 N** in the toolbar |
 | Delete a plot | hover a thumbnail → `×`, or **删除** in the window |
 | Empty the environment | **清空** next to 刷新 in the 环境 header |
 

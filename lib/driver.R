@@ -16,6 +16,8 @@ args <- commandArgs(trailingOnly = TRUE)
 port <- if (length(args) >= 1L) as.integer(args[[1]]) else 0L
 plot_dir <- if (length(args) >= 2L) args[[2]] else file.path(tempdir(), "dsh-r-plots")
 dir.create(plot_dir, showWarnings = FALSE, recursive = TRUE)
+# Keep srcref so "go to definition" can report file:line for source()d scripts.
+options(keep.source = TRUE)
 
 suppressPackageStartupMessages({
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
@@ -210,6 +212,210 @@ data_preview <- function(name, limit = 100L) {
   list(ok = FALSE, error = paste0("'", name, "' is not tabular (", paste(class(v), collapse = "/"), ")"))
 }
 
+# ---------------------------------------------------------------- code intel
+
+R_KEYWORDS <- c(
+  "if", "else", "repeat", "while", "for", "next", "break", "function", "return",
+  "TRUE", "FALSE", "NULL", "NA", "NA_integer_", "NA_real_", "NA_character_", "Inf", "NaN",
+  "library", "require", "source", "print", "cat", "message", "warning", "stop",
+  "tryCatch", "try", "withCallingHandlers", "invisible", "suppressWarnings", "suppressMessages",
+  "switch", "match.arg", "missing", "stopifnot", "on.exit", "Sys.time", "seq_along"
+)
+
+# Candidates for the token that ends `line`. Three shapes are supported:
+#   pkg::name   -> exported objects of that package
+#   obj$name    -> column names / list element names of that object
+#   plain       -> global environment, search path, attached packages, keywords
+complete_token <- function(line, limit = 300L) {
+  line <- as.character(line %||% "")
+  limit <- as.integer(limit %||% 300L)
+
+  ns <- regmatches(line, regexpr("[A-Za-z][A-Za-z0-9._]*::$", line))
+  if (length(ns) > 0L) {
+    pkg <- sub("::$", "", ns)
+    if (!pkg %in% loadedNamespaces()) {
+      tryCatch(loadNamespace(pkg), error = function(e) NULL)
+    }
+    if (pkg %in% loadedNamespaces()) {
+      items <- getNamespaceExports(pkg)
+      return(list(ok = TRUE, mode = "namespace", package = pkg, prefix = "",
+                  items = lapply(head(sort(items), limit), function(x)
+                    list(label = x, kind = "export", package = pkg))))
+    }
+    return(list(ok = TRUE, mode = "namespace", package = pkg, prefix = "", items = list()))
+  }
+
+  dollar <- regmatches(line, regexpr("[A-Za-z][A-Za-z0-9._]*\\$[A-Za-z0-9._]*$", line))
+  if (length(dollar) > 0L) {
+    object <- sub("\\$.*$", "", dollar)
+    prefix <- sub("^.*\\$", "", dollar)
+    if (exists(object, envir = globalenv())) {
+      target <- get(object, envir = globalenv())
+      names_here <- tryCatch(names(target), error = function(e) NULL)
+      if (is.null(names_here) && is.environment(target)) names_here <- ls(target)
+      names_here <- names_here[startsWith(names_here, prefix)]
+      return(list(ok = TRUE, mode = "dollar", object = object, prefix = prefix,
+                  items = lapply(head(sort(names_here), limit), function(x)
+                    list(label = x, kind = "field", package = ""))))
+    }
+    return(list(ok = TRUE, mode = "dollar", object = object, prefix = prefix, items = list()))
+  }
+
+  prefix <- regmatches(line, regexpr("[A-Za-z._][A-Za-z0-9._]*$", line))
+  prefix <- if (length(prefix) > 0L) prefix else ""
+
+  found <- list()
+  seen <- character()
+  add <- function(name, kind, package = "") {
+    if (!nzchar(name) || name %in% seen) return(invisible(NULL))
+    if (nzchar(prefix) && !startsWith(name, prefix)) return(invisible(NULL))
+    seen <<- c(seen, name)
+    is_fn <- kind == "function"
+    found[[length(found) + 1L]] <<- list(label = name, kind = kind, package = package)
+    invisible(NULL)
+  }
+
+  for (name in ls(envir = globalenv(), all.names = TRUE)) {
+    kind <- "object"
+    value <- tryCatch(get0(name, envir = globalenv(), inherits = FALSE), error = function(e) NULL)
+    if (is.function(value)) kind <- "function"
+    add(name, kind, "globalenv")
+  }
+  for (package in rev(.packages())) {
+    exports <- tryCatch(getNamespaceExports(package), error = function(e) character())
+    for (name in exports) add(name, "function", package)
+  }
+  for (name in R_KEYWORDS) add(name, "keyword")
+  for (name in ls(envir = baseenv(), all.names = TRUE)) add(name, "function", "base")
+
+  items <- found[seq_len(min(length(found), limit))]
+  list(ok = TRUE, mode = "plain", prefix = prefix, items = items,
+       total = length(found), truncated = length(found) > length(items))
+}
+
+# Parse the buffer and report syntax problems; a couple of cheap style lints
+# ride along so the gutter is useful even while the code is valid.
+diagnose_code <- function(code) {
+  code <- as.character(code %||% "")
+  problems <- list()
+  parsed <- tryCatch(parse(text = code, keep.source = TRUE), error = function(e) e)
+  if (inherits(parsed, "error")) {
+    message_text <- conditionMessage(parsed)
+    line <- NA_integer_
+    column <- NA_integer_
+    match <- regmatches(message_text, regexec("([0-9]+):([0-9]+):?\\s*", message_text))[[1]]
+    if (length(match) >= 3L) {
+      line <- as.integer(match[2]); column <- as.integer(match[3])
+    } else {
+      match <- regmatches(message_text, regexec("[^0-9]+([0-9]+):([0-9]+)$", message_text))[[1]]
+      if (length(match) >= 3L) { line <- as.integer(match[2]); column <- as.integer(match[3]) }
+    }
+    problems[[length(problems) + 1L]] <- list(
+      line = if (is.na(line)) 1L else line,
+      column = if (is.na(column)) 1L else column,
+      severity = "error", source = "parse", message = message_text)
+  }
+  lines <- strsplit(code, "\n", fixed = TRUE)[[1]]
+  for (index in seq_along(lines)) {
+    text <- lines[index]
+    if (grepl("\\bsetwd\\s*\\(", text)) {
+      problems[[length(problems) + 1L]] <- list(line = index, column = 1, severity = "warning",
+        source = "lint", message = "setwd() changes the project directory; prefer the panel's working directory")
+    }
+    if (grepl("\\battach\\s*\\(", text)) {
+      problems[[length(problems) + 1L]] <- list(line = index, column = 1, severity = "warning",
+        source = "lint", message = "attach() makes name lookup unpredictable; use with() or $. notation")
+    }
+    if (grepl("(?<![=!<>])=(?!=)", text, perl = TRUE) && !grepl("<-|function|==|=>|<=|>=|\\$|\\[|list\\(|\\(=", text)) {
+      problems[[length(problems) + 1L]] <- list(line = index, column = 1, severity = "info",
+        source = "lint", message = "= used for assignment; <- is the conventional form")
+    }
+  }
+  list(ok = TRUE, problems = problems, count = length(problems))
+}
+
+# Where does `name` come from? Functions defined in the editor carry a srcref,
+# which points back at the file and the first line.
+# "name(a, b = 2, ...)" built from formals(); a missing default deparses to "",
+# which is how we tell `x` from `method = "qr"` (deparse(args()) would emit NULL).
+signature_of <- function(name, value) {
+  fml <- tryCatch(formals(value), error = function(e) NULL)
+  if (is.null(fml)) return("")
+  if (length(fml) == 0L) return(paste0(name, "()"))
+  parts <- vapply(names(fml), function(key) {
+    default <- tryCatch(paste(deparse(fml[[key]]), collapse = " "), error = function(e) "")
+    if (!nzchar(default)) key else paste0(key, " = ", default)
+  }, character(1), USE.NAMES = FALSE)
+  paste0(name, "(", paste(parts, collapse = ", "), ")")
+}
+
+definition_of <- function(name) {
+  name <- trimws(as.character(name %||% ""))
+  if (!nzchar(name)) return(list(ok = FALSE, error = "empty name"))
+  value <- NULL
+  where <- ""
+  if (exists(name, envir = globalenv(), inherits = FALSE)) {
+    value <- get(name, envir = globalenv(), inherits = FALSE)
+    where <- "globalenv"
+  } else {
+    hits <- tryCatch(utils::getAnywhere(name), error = function(e) NULL)
+    if (!is.null(hits) && length(hits$objs) > 0L) {
+      value <- hits$objs[[1]]
+      where <- if (length(hits$where) > 0L) hits$where[1] else ""
+    }
+  }
+  if (is.null(value)) {
+    return(list(ok = FALSE, name = name, error = paste0("no definition found for '", name, "'")))
+  }
+  file <- NA_character_
+  line <- NA_integer_
+  # R keeps srcref on the object itself; getSrcFilename()/getSrcLocation()
+  # resolve both plain srcrefs and functions from source()d files (the
+  # "srcfile" attribute is empty on modern R, so don't read it by hand).
+  file <- NA_character_
+  line <- NA_integer_
+  try({
+    resolved <- utils::getSrcFilename(value, full.names = TRUE)
+    if (length(resolved) > 0L && !is.na(resolved[1]) && nzchar(resolved[1])) file <- resolved[1]
+    located <- utils::getSrcLocation(value, "line")
+    if (length(located) > 0L && !is.na(located[1])) line <- as.integer(located[1])
+  }, silent = TRUE)
+  signature <- ""
+  if (is.function(value)) {
+    signature <- signature_of(name, value)
+  }
+  text <- paste(utils::head(deparse(value), 12L), collapse = "\n")
+  list(ok = TRUE, name = name, where = where, file = file, line = line,
+       kind = if (is.function(value)) "function" else "object",
+       signature = signature, text = text)
+}
+
+# Loaded packages plus the installed library (cached: installed.packages() is slow).
+package_inventory <- function(refresh = FALSE) {
+  cache <- get0("pkg_cache", envir = globalenv(), inherits = FALSE)
+  if (refresh || is.null(cache)) {
+    installed <- tryCatch(utils::installed.packages()[, c("Package", "Version"), drop = FALSE],
+                          error = function(e) NULL)
+    rows <- list()
+    if (!is.null(installed)) {
+      for (index in seq_len(nrow(installed))) {
+        rows[[index]] <- list(name = installed[index, "Package"],
+                              version = installed[index, "Version"],
+                              library = dirname(dirname(rownames(installed)[index])))
+      }
+    }
+    cache <- list(rows = rows, at = format(Sys.time(), "%Y-%m-%d %H:%M:%S"))
+    assign("pkg_cache", cache, envir = globalenv())
+  }
+  loaded <- lapply(rev(.packages()), function(package) {
+    list(name = package,
+         version = tryCatch(as.character(utils::packageVersion(package)), error = function(e) ""),
+         path = tryCatch(dirname(getNamespaceInfo(package, "path")), error = function(e) ""))
+  })
+  list(ok = TRUE, loaded = loaded, installed = cache$rows,
+       installedAt = cache$at, libPaths = unname(.libPaths()))
+}
+
 handle <- function(req) {
   kind <- req$kind
   id <- req$id
@@ -245,6 +451,10 @@ handle <- function(req) {
                wd = wd, echo = req$echo)
     },
     help = help_text(req$topic),
+    complete = complete_token(req$line, req$limit),
+    diagnose = diagnose_code(req$code),
+    definition = definition_of(req$name),
+    packages = package_inventory(isTRUE(req$refresh)),
     data = data_preview(req$name, if (is.null(req$limit)) 100L else as.integer(req$limit)),
     stop = list(ok = TRUE, stops = TRUE),
     list(ok = FALSE, error = paste0("unknown command: ", kind))
