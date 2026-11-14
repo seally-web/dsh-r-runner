@@ -244,6 +244,57 @@ function render(node) {
   return `<${node.type}${attributes}>${render(node.children.flat(Infinity))}</${node.type}>`
 }
 
+const HISTORY_SAMPLE = [
+  { code: 'df <- iris\nfit <- lm(Sepal.Length ~ Species, data = df)', ok: true, ms: 4, at: '2026-11-14T19:05:12Z' },
+  { code: 'summary(fit)', ok: true, ms: 2, at: '2026-11-14T19:05:14Z' },
+  { code: 'library(ggplot2)\np <- ggplot(df, aes(Sepal.Length, Sepal.Width, colour = Species)) + geom_point()', ok: true, ms: 61, at: '2026-11-14T19:05:20Z' },
+  { code: 'mean(iris$Sepal.Length)', ok: true, ms: 1, at: '2026-11-14T19:05:22Z' },
+  { code: 'nope()', ok: false, ms: 1, at: '2026-11-14T19:05:30Z' }
+]
+
+const HELP_SAMPLE = `lm {stats}                                            R Documentation
+
+Fitting Linear Models
+
+Description:
+
+     'lm' is used to fit linear models, including multivariate ones.
+     It can be used to carry out regression, single stratum analysis of
+     variance and analysis of covariance.
+
+Usage:
+
+     lm(formula, data, subset, weights, na.action,
+        method = "qr", model = TRUE, x = FALSE, y = FALSE, qr = TRUE,
+        singular.ok = TRUE, contrasts = NULL, offset, ...)
+
+Arguments:
+
+ formula: an object of class '"formula"' (or one that can be coerced to
+          that class): a symbolic description of the model to be fitted.
+
+    data: an optional data frame, list or environment containing the
+          variables in the model.`
+
+const DATA_SAMPLE = {
+  ok: true,
+  name: 'df',
+  kind: 'data.frame',
+  columns: ['Sepal.Length', 'Sepal.Width', 'Petal.Length', 'Petal.Width', 'Species'],
+  rows: [
+    ['5.1', '3.5', '1.4', '0.2', 'setosa'],
+    ['4.9', '3.0', '1.4', '0.2', 'setosa'],
+    ['4.7', '3.2', '1.3', '0.2', 'setosa'],
+    ['4.6', '3.1', '1.5', '0.2', 'setosa'],
+    ['5.0', '3.6', '1.4', '0.2', 'setosa'],
+    ['5.4', '3.9', '1.7', '0.4', 'setosa'],
+    ['4.6', '3.4', '1.4', '0.3', 'setosa'],
+    ['5.0', '3.4', '1.5', '0.2', 'setosa']
+  ],
+  total: 150,
+  shown: 8
+}
+
 const page = (title, html) => `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>html,body{margin:0;height:100%;background:#fff;color:#1f2328;font-family:-apple-system,"PingFang SC",sans-serif}
 #host{position:absolute;inset:0;display:flex}</style><style>${css}</style></head><body><div id="host">${html}</div></body></html>`
@@ -263,7 +314,10 @@ async function paint(props) {
   return html
 }
 
-writeFileSync('/tmp/rr-lightbox.html', page('lightbox', await paint({ useTabInfo: () => ({}), t, initialLightbox: 0 })))
+writeFileSync('/tmp/rr-plot.html', page('plot', await paint({ useTabInfo: () => ({}), t, initialView: 'plot', initialPlot: 0 })))
 writeFileSync('/tmp/rr-settings.html', page('settings', await paint({ useTabInfo: () => ({}), t, initialView: 'settings' })))
 writeFileSync('/tmp/rr-panel.html', page('panel', await paint({ useTabInfo: () => ({}), t })))
-console.log('wrote /tmp/rr-panel.html /tmp/rr-lightbox.html /tmp/rr-settings.html')
+writeFileSync('/tmp/rr-history.html', page('history', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'history', historyEntries: HISTORY_SAMPLE } })))
+writeFileSync('/tmp/rr-help.html', page('help', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'help', helpTopic: 'lm', helpText: HELP_SAMPLE } })))
+writeFileSync('/tmp/rr-data.html', page('data', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'data', dataName: 'df', dataTable: DATA_SAMPLE } })))
+console.log('wrote /tmp/rr-panel.html /tmp/rr-plot.html /tmp/rr-settings.html')

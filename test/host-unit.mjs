@@ -8,6 +8,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  appendHistory,
+  clearHistory,
+  readHistory,
   allowedRoots,
   defaultConfig,
   effectiveScriptDir,
@@ -85,6 +88,21 @@ try {
   // listRFiles walks nested folders and only keeps R sources -------------
   const files = listRFiles(dir)
   assert.deepEqual(files.map((file) => file.name).sort(), ['clean.R', 'report.Rmd'])
+
+  // history: newest first, consecutive duplicates collapsed, clearable ----
+  const home = join(dir, '.dsh-home')
+  mkdirSync(home, { recursive: true })
+  assert.deepEqual(readHistory(home), [])
+  appendHistory({ code: '1 + 1', ok: true, ms: 3 }, home)
+  appendHistory({ code: '1 + 1', ok: true, ms: 4 }, home)
+  appendHistory({ code: 'df <- iris', ok: true, ms: 9 }, home)
+  const entries = readHistory(home)
+  assert.equal(entries.length, 2, 'consecutive duplicates collapse')
+  assert.equal(entries[0].code, 'df <- iris', 'newest first')
+  assert.equal(entries[1].ms, 4, 'the newest run of a duplicated command wins')
+  assert.equal(appendHistory({ code: '   ' }, home).length, 2, 'blank code is ignored')
+  clearHistory(home)
+  assert.deepEqual(readHistory(home), [])
 
   console.log('host-unit: ok')
 } finally {

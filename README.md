@@ -12,7 +12,14 @@ laid out like RStudio, with the keyboard habits of VS Code.
 Click any plot thumbnail to open it full-size — fit-to-window or 100 %, flip through
 the set with ← →, copy the path, or open the PNG in a new tab:
 
-![Plot viewer](docs/lightbox.png)
+![Plot viewer](docs/plot.png)
+
+The bottom pane has four tabs — console (with a real prompt), history, help and the
+data viewer:
+
+![Data viewer](docs/data.png)
+
+![History](docs/history.png)
 
 ## What you get
 
@@ -24,7 +31,18 @@ the set with ← →, copy the path, or open the PNG in a new tab:
 - **Editor habits from VS Code.** `⌘/Ctrl+Enter` runs the selection (or the buffer),
   `⌘/Ctrl+S` saves, Tab indents two spaces, the breadcrumb shows where you are.
 - **Environment table.** Name / value / class / size, double-click a row to assign a
-  new value with any R expression (`1:10`, `c("a","b")`, …).
+  new value with any R expression (`1:10`, `c("a","b")`, …); the **表** button opens
+  the object in the data viewer.
+- **Console prompt.** Type R straight into the panel: Enter runs, `Shift+Enter` adds a
+  line, `↑`/`↓` walk the commands you already sent. Output lands in the same log as
+  editor runs.
+- **History.** Every run (editor, console, `r_run`) is kept in
+  `~/.dsh/r-runner-history.json`; the 历史 tab lists them, click a row to put the code
+  back in the prompt.
+- **Help.** The 帮助 tab is `?topic`: it renders the real R help page
+  (`utils:::.getHelpFile` + `tools::Rd2txt`) for anything installed locally.
+- **Data viewer.** The 数据 tab previews a `data.frame` / `matrix` / vector — first 100
+  rows, numeric columns right-aligned, `<NA>` marked.
 - **Plots become files.** Every `plot()` is written to
   `.dsh-r-runner/plots/plot-<ts>-<pid>-NNN.png`; the panel shows thumbnails you can
   click to enlarge (fit / 100 %, ← → to browse, copy path, open the PNG), and the
@@ -66,6 +84,10 @@ to the profile manifest; `bin/reload-host.sh` forces the host to re-compose.
 | Open the panel | `⌘⇧R` (web: `⌥⇧R`) |
 | Restart the R session | toolbar **重启会话** |
 | Edit a variable | double-click its row in the environment table |
+| View a data frame | the **表** button on its environment row, or the 数据 tab |
+| Run a console command | type in the prompt, `Enter` |
+| Previous / next command | `↑` / `↓` in the prompt |
+| Look up help | 帮助 tab, type a topic, `Enter` |
 | Enlarge a plot | click its thumbnail |
 | Close / browse plots in the viewer | `Esc` / `←` `→` / `0` (fit ⇄ 100 %) |
 

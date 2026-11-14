@@ -156,6 +156,60 @@ run_code <- function(code, wd = NULL, echo = NULL) {
   )
 }
 
+# Help text for a topic: utils:::.getHelpFile() gives the Rd object, Rd2txt
+# renders it to a file we can read back as plain text.
+help_text <- function(topic) {
+  topic <- trimws(as.character(topic %||% ""))
+  if (!nzchar(topic)) return(list(ok = FALSE, error = "empty topic"))
+  rd <- tryCatch(utils:::.getHelpFile(utils::help(topic, help_type = "text")),
+                 error = function(e) NULL)
+  if (is.null(rd)) return(list(ok = FALSE, topic = topic, error = paste0("no help found for '", topic, "'")))
+  tmp <- tempfile(fileext = ".txt")
+  on.exit(unlink(tmp), add = TRUE)
+  rendered <- tryCatch({ tools::Rd2txt(rd, out = tmp); TRUE }, error = function(e) FALSE)
+  if (!rendered) return(list(ok = FALSE, topic = topic, error = "could not render the help page"))
+  text <- paste(readLines(tmp, warn = FALSE), collapse = "\n")
+  # Rd2txt underlines/bolds by overstriking ("_\bA"); drop those pairs.
+  text <- gsub(".\\x08", "", text, perl = TRUE)
+  text <- gsub("\x08", "", text, useBytes = TRUE)
+  list(ok = TRUE, topic = topic, text = text, lines = length(strsplit(text, "\n")[[1]]))
+}
+
+# A tabular preview of an object for the data viewer: column names plus the
+# first `limit` rows, cells coerced to strings so JSON stays simple.
+data_preview <- function(name, limit = 100L) {
+  name <- as.character(name %||% "")
+  if (!nzchar(name) || !exists(name, envir = globalenv())) {
+    return(list(ok = FALSE, error = paste0("no object named '", name, "'")))
+  }
+  v <- get(name, envir = globalenv())
+  as_text <- function(x) { x <- as.character(x); x[is.na(x)] <- "<NA>"; x }
+  if (is.data.frame(v)) {
+    shown <- utils::head(v, limit)
+    cols <- names(shown)
+    rows <- lapply(seq_len(nrow(shown)), function(i) {
+      as.list(unname(vapply(cols, function(cn) as_text(shown[[cn]][i]), "")))
+    })
+    return(list(ok = TRUE, name = name, kind = paste(class(v), collapse = "/"),
+                columns = as.list(cols), rows = rows, total = nrow(v), shown = nrow(shown)))
+  }
+  if (is.matrix(v)) {
+    shown <- utils::head(v, limit)
+    cols <- colnames(shown)
+    if (is.null(cols)) cols <- paste0("V", seq_len(ncol(shown)))
+    rows <- lapply(seq_len(nrow(shown)), function(i) as.list(unname(as_text(shown[i, ]))))
+    return(list(ok = TRUE, name = name, kind = paste(class(v), collapse = "/"),
+                columns = as.list(cols), rows = rows, total = nrow(v), shown = nrow(shown)))
+  }
+  if (is.atomic(v) && is.null(dim(v))) {
+    shown <- utils::head(v, limit)
+    rows <- lapply(unname(as_text(shown)), function(cell) list(cell))
+    return(list(ok = TRUE, name = name, kind = paste(class(v), collapse = "/"),
+                columns = list("value"), rows = rows, total = length(v), shown = length(shown)))
+  }
+  list(ok = FALSE, error = paste0("'", name, "' is not tabular (", paste(class(v), collapse = "/"), ")"))
+}
+
 handle <- function(req) {
   kind <- req$kind
   id <- req$id
@@ -190,11 +244,14 @@ handle <- function(req) {
       run_code(sprintf("source(%s, echo = %s)", deparse(path), if (isTRUE(req$echo)) "TRUE" else "FALSE"),
                wd = wd, echo = req$echo)
     },
+    help = help_text(req$topic),
+    data = data_preview(req$name, if (is.null(req$limit)) 100L else as.integer(req$limit)),
     stop = list(ok = TRUE, stops = TRUE),
     list(ok = FALSE, error = paste0("unknown command: ", kind))
   )
   out$id <- id
-  out$kind <- kind
+  # keep the payload's own `kind` (run/data/help); the command name goes to `cmd`
+  out$cmd <- kind
   out
 }
 

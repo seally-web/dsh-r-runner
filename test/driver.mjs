@@ -54,6 +54,23 @@ try {
   assert.equal(failure.ok, false)
   assert.match(String(failure.error ?? ''), /boom/)
 
+  const frame = await session.runCode('df <- iris[1:5, 1:2]')
+  assert.equal(frame.ok, true)
+  const preview = await session.data('df')
+  assert.equal(preview.ok, true, JSON.stringify(preview))
+  assert.deepEqual(preview.columns, ['Sepal.Length', 'Sepal.Width'])
+  assert.equal(preview.total, 5)
+  assert.equal(preview.rows[0][0], '5.1')
+  const notTabular = await session.data('x')
+  assert.equal(notTabular.ok, true, 'a bare vector previews as one column')
+  assert.equal(notTabular.columns[0], 'value')
+  const missing = await session.data('nope')
+  assert.equal(missing.ok, false)
+
+  const help = await session.help('mean')
+  assert.equal(help.ok, true, JSON.stringify(help))
+  assert.match(help.text, /Arithmetic Mean|mean/i)
+
   const removed = await session.removeVariable('n')
   assert.equal(removed.ok, true)
 
