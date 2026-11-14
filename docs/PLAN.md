@@ -117,8 +117,14 @@ DSH 插件分两半，边界由「谁有权限、谁有 UI」决定：
 - [x] Shiny / Quarto 预览：`POST /r/api/app/start`（`shiny::runApp` + 空闲端口探测，iframe 内嵌，可停止）、`POST /r/api/quarto/render`；缺 shiny/quarto 时给安装提示。
 - [x] 项目系统（只读）：`state.project` 认 `.Rproj`，设置页显示项目名，`scriptDir` 缺省跟随项目根 `<project>/R`。
 - [ ] 远程 R：SSH 到服务器跑 driver（`R --slave` 远端 TCP 转发）。
+  - 设计：配置加 `remote: { ssh, host, remoteR, remoteDir }`；本地 `ssh -N -L <port>:127.0.0.1:<port>` 建隧道，再 `ssh host "$remoteR --slave -f driver.R --args <port> <remotePlotDir>"`；`RSession` 只需把 `freePort()` 换成隧道端口。
+  - 卡点：图形落在远端磁盘，`/artifact` 读不到 → 需要 `ssh cat` 走流式通道；文件树/保存也要区分本地/远端。没有可用的 SSH 目标机就没法验证。
 - [ ] webR 后备：本机没装 R 时用 WASM 版跑纯计算型代码（无图形、无包）。
+  - 设计：`webR` 走 `@r-wasm/webr` 在浏览器里跑，`lib/client.js` 已有 `R` 执行抽象位；需要在 client bundle 里额外打包 ~50 MB 的 WASM，且与「常驻进程 + PNG 设备」模型冲突（webR 无图形设备）。
+  - 结论：只适合做「无 R 环境时的只读演示」，收益低、体积大，建议不做。
 - [ ] 与 matlab-runner 抽公共层：会话进程管理、变量表、图形条、文件树都可复用。
+  - 设计：抽 `dsh-runner-core`（`spawnSession(binary, args, { marker, timeout })`、`varsView`、`plotStrip`、`fileTree` 四个模块），两个插件各留 30 行适配；代价是两边都要发版，且 matlab 的会话协议（marker 切输出）与 R 的 TCP 协议不同，公共层只能覆盖 UI 与进程生命周期。
+  - 结论：等第三个语言插件出现时再做更划算。
 
 ---
 
