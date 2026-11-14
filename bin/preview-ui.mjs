@@ -76,7 +76,8 @@ const state = {
     rscriptBinary: '/usr/local/bin/Rscript',
     workdir: workspace,
     scriptDir: `${workspace}/R`,
-    plots: [],
+    plots: ['/Users/me/Documents/r-project/R/plots/plot-20261114190512-51234-001.png',
+      '/Users/me/Documents/r-project/R/plots/plot-20261114190644-51234-002.png'],
     lastError: null,
     probe: { ok: true, version: 'R version 4.6.2 (2026-10-29) -- "Diversified Portfolio"' },
     config: {
@@ -229,7 +230,7 @@ function render(node) {
   for (const [key, value] of Object.entries(props)) {
     if (value === undefined || value === null || value === false) continue
     if (key === 'children' || key === 'value' || key === 'ref' || key === 'style' || /^on[A-Z]/.test(key)) continue
-    const name = ATTRIBUTES[key] ?? (/^data-|^aria-/.test(key) ? key : undefined)
+    const name = ATTRIBUTES[key] ?? (/^data-|^aria-|^[a-z][a-z0-9-]*$/.test(key) ? key : undefined)
     if (name !== undefined) attributes += ` ${name}="${escape(value)}"`
   }
   if (props.style !== undefined) attributes += ` style="${escape(styleToCss(props.style))}"`
@@ -239,6 +240,7 @@ function render(node) {
     return `<input${attributes} type="${props.type ?? 'text'}"${extra}>`
   }
   if (node.type === 'option') return `<option${attributes}>${render(node.children)}</option>`
+  if (node.type === 'img') return `<img${attributes}>`
   return `<${node.type}${attributes}>${render(node.children.flat(Infinity))}</${node.type}>`
 }
 
@@ -261,6 +263,7 @@ async function paint(props) {
   return html
 }
 
+writeFileSync('/tmp/rr-lightbox.html', page('lightbox', await paint({ useTabInfo: () => ({}), t, initialLightbox: 0 })))
 writeFileSync('/tmp/rr-settings.html', page('settings', await paint({ useTabInfo: () => ({}), t, initialView: 'settings' })))
 writeFileSync('/tmp/rr-panel.html', page('panel', await paint({ useTabInfo: () => ({}), t })))
-console.log('wrote /tmp/rr-panel.html /tmp/rr-settings.html')
+console.log('wrote /tmp/rr-panel.html /tmp/rr-lightbox.html /tmp/rr-settings.html')

@@ -9,6 +9,11 @@ laid out like RStudio, with the keyboard habits of VS Code.
 
 ![Panel](docs/panel.png)
 
+Click any plot thumbnail to open it full-size — fit-to-window or 100 %, flip through
+the set with ← →, copy the path, or open the PNG in a new tab:
+
+![Plot viewer](docs/lightbox.png)
+
 ## What you get
 
 - **A session, not a script runner.** One long-lived `R --slave` process: variables,
@@ -21,7 +26,8 @@ laid out like RStudio, with the keyboard habits of VS Code.
 - **Environment table.** Name / value / class / size, double-click a row to assign a
   new value with any R expression (`1:10`, `c("a","b")`, …).
 - **Plots become files.** Every `plot()` is written to
-  `.dsh-r-runner/plots/plot-<ts>-<pid>-NNN.png`; the panel shows thumbnails, and the
+  `.dsh-r-runner/plots/plot-<ts>-<pid>-NNN.png`; the panel shows thumbnails you can
+  click to enlarge (fit / 100 %, ← → to browse, copy path, open the PNG), and the
   paths are plain files an agent can read.
 - **Agent tool.** `r_run({ code })` / `r_run({ file })` lets the model run R directly
   and get back the console output plus plot paths.
@@ -60,6 +66,8 @@ to the profile manifest; `bin/reload-host.sh` forces the host to re-compose.
 | Open the panel | `⌘⇧R` (web: `⌥⇧R`) |
 | Restart the R session | toolbar **重启会话** |
 | Edit a variable | double-click its row in the environment table |
+| Enlarge a plot | click its thumbnail |
+| Close / browse plots in the viewer | `Esc` / `←` `→` / `0` (fit ⇄ 100 %) |
 
 Notes:
 
