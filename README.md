@@ -43,10 +43,15 @@ data viewer:
   (`utils:::.getHelpFile` + `tools::Rd2txt`) for anything installed locally.
 - **Data viewer.** The 数据 tab previews a `data.frame` / `matrix` / vector — first 100
   rows, numeric columns right-aligned, `<NA>` marked.
-- **Plots become files.** Every `plot()` is written to
-  `.dsh-r-runner/plots/plot-<ts>-<pid>-NNN.png`; the panel shows thumbnails you can
-  click to enlarge (fit / 100 %, ← → to browse, copy path, open the PNG), and the
-  paths are plain files an agent can read.
+- **Plots open in a floating window.** Every `plot()` is written to
+  `.dsh-r-runner/plots/plot-<ts>-<pid>-NNN.png`. Clicking a thumbnail opens it in a
+  centred window (portalled to `document.body`, so the sidebar cannot clip it):
+  `‹ ›` browse, `适应 ⇄ 100%`, **原图** opens the PNG in a tab, **路径** copies the
+  file path, **删除** removes that one plot, and the strip has a **清空** button.
+  The files are plain PNGs an agent can read.
+- **`.Rmd` runs one chunk.** With the caret inside an `{r}` fenced chunk, `⌘/Ctrl+Enter`
+  runs just that chunk (the prompt says `chunk 2/3 · L12-18`); outside any chunk it
+  falls back to the first one.
 - **Agent tool.** `r_run({ code })` / `r_run({ file })` lets the model run R directly
   and get back the console output plus plot paths.
 
@@ -88,8 +93,11 @@ to the profile manifest; `bin/reload-host.sh` forces the host to re-compose.
 | Run a console command | type in the prompt, `Enter` |
 | Previous / next command | `↑` / `↓` in the prompt |
 | Look up help | 帮助 tab, type a topic, `Enter` |
-| Enlarge a plot | click its thumbnail |
-| Close / browse plots in the viewer | `Esc` / `←` `→` / `0` (fit ⇄ 100 %) |
+| Run the current `.Rmd` chunk | `⌘/Ctrl+Enter` inside an `{r}` chunk |
+| Enlarge a plot | click its thumbnail (floating window) |
+| Close / browse the plot window | `Esc` / `←` `→` / `0` (fit ⇄ 100 %) |
+| Delete a plot | hover a thumbnail → `×`, or **删除** in the window |
+| Empty the environment | **清空** next to 刷新 in the 环境 header |
 
 Notes:
 
@@ -99,6 +107,8 @@ Notes:
 - Running a file switches the working directory to that file's folder
   (`runInFileDir`), which is what `read.csv("data.csv")` usually wants.
 - `plot()` output is a PNG per plot. `par(mfrow = c(2, 2))` therefore yields four files.
+- **清空** in the environment header runs `rm(list = ls(envir = globalenv()))`, so it
+  empties your objects but keeps the session (and its loaded packages) alive.
 
 ## Configuration
 

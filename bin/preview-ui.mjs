@@ -297,7 +297,8 @@ const DATA_SAMPLE = {
 
 const page = (title, html) => `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>html,body{margin:0;height:100%;background:#fff;color:#1f2328;font-family:-apple-system,"PingFang SC",sans-serif}
-#host{position:absolute;inset:0;display:flex}</style><style>${css}</style></head><body><div id="host">${html}</div></body></html>`
+#host{position:absolute;inset:0;display:flex}
+.rr-lb-card{animation:none !important}</style><style>${css}</style></head><body><div id="host">${html}</div></body></html>`
 
 async function paint(props) {
   GLOBAL.hooks.clear()

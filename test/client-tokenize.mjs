@@ -19,7 +19,7 @@ runInNewContext(source, {
 }, { filename: 'client.js' })
 
 const exports = loaded.factory(() => ({ createElement: () => ({}) }))
-const { tokenizeLine } = exports.__test
+const { tokenizeLine, chunkAt, countChunks } = exports.__test
 
 const kinds = (line) => Array.from(tokenizeLine(line), (token) => token.kind).join(',')
 const text = (line) => tokenizeLine(line).map((token) => token.text).join('')
@@ -56,5 +56,32 @@ assert.ok(tokenizeLine('`my column` <- 1').some((token) => token.kind === 'name'
 for (const line of ['', 'x', '  # indented', 'a <- c("x", \'y\')', '##', '"unterminated', 'f(1,2)[3]$z@y']) {
   assert.equal(text(line), line, `round-trips ${JSON.stringify(line)}`)
 }
+
+// Rmd chunk detection: the chunk under the caret, and how many exist.
+const rmd = [
+  '---',
+  'title: demo',
+  '---',
+  '',
+  '```{r setup}',
+  'library(ggplot2)',
+  '```',
+  '',
+  '文本',
+  '',
+  '```{r plot}',
+  'ggplot(iris, aes(Sepal.Length)) + geom_histogram()',
+  '```',
+].join('\n')
+const setupAt = rmd.indexOf('library(ggplot2)')
+const plotAt = rmd.indexOf('ggplot(iris')
+assert.equal(chunkAt(rmd, setupAt).code.trim(), 'library(ggplot2)')
+assert.equal(chunkAt(rmd, setupAt).index, 1)
+assert.equal(chunkAt(rmd, plotAt).index, 2)
+assert.match(chunkAt(rmd, plotAt).code, /geom_histogram/)
+assert.equal(chunkAt(rmd, rmd.indexOf('title: demo')), null, 'front matter belongs to no chunk')
+assert.equal(chunkAt(rmd, rmd.indexOf('```{r setup}') + 1).index, 1, 'a fence line is part of its chunk')
+assert.equal(countChunks(rmd), 2)
+assert.equal(chunkAt('x <- 1', 0), null, 'plain R has no chunks')
 
 console.log('client-tokenize: ok')
