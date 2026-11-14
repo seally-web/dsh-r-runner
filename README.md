@@ -74,6 +74,16 @@ data viewer:
   copying the path when the browser blocks the new tab).
 - **English UI.** 设置 → 信息 → 界面语言 switches the shell (toolbar, tabs, headers,
   status bar, plot window) between 中文 and English; the choice is remembered.
+- **Folder picker, no blind typing.** The desktop shell has no `window.prompt()`, so
+  **＋ 文件夹** (tree header and settings) opens an in-panel browser
+  (`GET /r/api/browse`): `⤴` up, **主目录**, **工作区**, click a folder to walk in,
+  double-click or **添加此文件夹** to add it as an extra root. The picker ignores the
+  workdir guard on purpose — it only lists directory names.
+- **Switchable working directory.** Settings → **选择目录** → **浏览…** picks a folder
+  (this turns `autoDetect` off so the choice sticks), the **会话工作区** dropdown lists
+  the DSH workspaces, and **跟随当前会话** makes the panel follow the session again.
+- **RStudio projects.** The host reports the first `*.Rproj` in the working directory
+  (settings → 信息 → 项目), so a project root is visible without opening RStudio.
 - **Agent tool.** `r_run({ code })` / `r_run({ file })` lets the model run R directly
   and get back the console output plus plot paths.
 
@@ -118,6 +128,8 @@ to the profile manifest; `bin/reload-host.sh` forces the host to re-compose.
 | Completion | `Ctrl+Space`, or type after `.` / `$` / `::` |
 | Jump to definition | `F12` or `⌘`-click on a name |
 | Install a package | 包 tab → type a name → `install.packages()` |
+| Add a folder | **＋ 文件夹** (tree) or **添加文件夹** (settings) → browse |
+| Change the working directory | Settings → 选择目录 → **浏览…** / 会话工作区 |
 | Render the `.Rmd` | **预览 Rmd** in the toolbar |
 | Run the current `.Rmd` chunk | `⌘/Ctrl+Enter` inside an `{r}` chunk |
 | Enlarge a plot | click its thumbnail (floating window) |

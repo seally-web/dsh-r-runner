@@ -244,6 +244,21 @@ function render(node) {
   return `<${node.type}${attributes}>${render(node.children.flat(Infinity))}</${node.type}>`
 }
 
+const PICKER_SAMPLE = {
+  mode: 'root',
+  path: '/Users/me/Documents/r-project/R',
+  parent: '/Users/me/Documents/r-project',
+  home: '/Users/me',
+  workdir: '/Users/me/Documents/r-project',
+  loading: false,
+  error: '',
+  entries: [
+    { name: 'data', path: '/Users/me/Documents/r-project/R/data' },
+    { name: 'figures', path: '/Users/me/Documents/r-project/R/figures' },
+    { name: 'scripts', path: '/Users/me/Documents/r-project/R/scripts' },
+  ],
+}
+
 const PACKAGES_SAMPLE = {
   ok: true,
   loaded: [
@@ -349,5 +364,6 @@ writeFileSync('/tmp/rr-help.html', page('help', await paint({ useTabInfo: () => 
 writeFileSync('/tmp/rr-packages.html', page('packages', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'packages', pkgList: PACKAGES_SAMPLE } })))
 writeFileSync('/tmp/rr-complete.html', page('complete', await paint({ useTabInfo: () => ({}), t, preview: { completion: COMPLETION_SAMPLE } })))
 writeFileSync('/tmp/rr-english.html', page('english', await paint({ useTabInfo: () => ({}), t, preview: { lang: 'en' } })))
+writeFileSync('/tmp/rr-picker.html', page('picker', await paint({ useTabInfo: () => ({}), t, preview: { lang: 'zh', picker: PICKER_SAMPLE } })))
 writeFileSync('/tmp/rr-data.html', page('data', await paint({ useTabInfo: () => ({}), t, preview: { bottomTab: 'data', dataName: 'df', dataTable: DATA_SAMPLE } })))
 console.log('wrote /tmp/rr-panel.html /tmp/rr-plot.html /tmp/rr-settings.html')
