@@ -244,6 +244,18 @@ plugin then disappears silently — the plugin manager shows `enabled: true` wit
 `fiberPhase: null` (not `failed`, so there is no diagnostic). `test/import.mjs` exists
 to catch exactly this; keep the host half on Node built-ins only.
 
+**The tab opens but stays blank after an update.** A render-time throw leaves React with
+no boundary to catch it. Two traps, both hit once in this plugin: the client factory only
+receives `require` — `ctx` exists only inside `apply(ctx)`, so never read a free `ctx` in a
+component; and the client context refuses services that are not declared in the plugin's
+`inject` list (`cannot get property "sessions" without inject`). `POST /r/api/debug/props`
+reports what the shell actually hands the panel (`propsKeys`, `sessionId`, resolved cwd)
+when a slot seems to give nothing.
+
+**The tree does not follow the session.** The panel asks for its seat's workspace through
+`props.sessionId` → `ctx.sessions` → `?cwd=`; if that chain breaks it falls back to the
+first registered workspace and settings shows 「来自注册工作区」 instead of 「来自当前会话」.
+
 **"R 不可用" in the settings page.** Point `rBinary` at the real binary
 (`which R`, e.g. `/usr/local/bin/R`), then press **重启会话**.
 
