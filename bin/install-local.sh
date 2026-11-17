@@ -53,7 +53,8 @@ if [ ! -f "$CONFIG" ]; then
   "rscriptBinary": "/usr/local/bin/Rscript",
   "sessionArgs": "--vanilla",
   "workdir": "$WORKSPACE",
-  "scriptDir": "$WORKSPACE/r",
+  "autoDetect": true,
+  "scriptDirAuto": true,
   "timeoutMs": 600000,
   "env": {}
 }

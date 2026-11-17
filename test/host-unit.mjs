@@ -53,6 +53,14 @@ try {
 
   // scriptDir defaults inside the workdir --------------------------------
   assert.equal(effectiveScriptDir(base), join(dir, 'R'))
+  // defaults now follow the workspace, so a stale installed scriptDir is ignored
+  assert.equal(base.autoDetect, true)
+  assert.equal(base.scriptDirAuto, true)
+  const pinned = normalizeConfig({ ...defaultConfig(), workdir: dir, scriptDir: join(dir, 'scripts'), scriptDirAuto: false })
+  assert.equal(effectiveScriptDir(pinned), join(dir, 'scripts'), 'an explicit scriptDir wins when auto is off')
+  const loose = normalizeConfig({ ...defaultConfig(), workdir: dir, scriptDir: join(dir, 'stale', 'r'), scriptDirAuto: true })
+  assert.equal(effectiveScriptDir(loose), join(dir, 'R'), 'scriptDirAuto ignores a stale stored value')
+  assert.equal(normalizeConfig({ detected: { cwd: '/tmp' } }).detected, undefined, 'detected never persists')
   assert.equal(effectiveWorkdir(base), dir)
 
   // path policy ---------------------------------------------------------

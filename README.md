@@ -189,8 +189,12 @@ Notes:
 
 - **R binary** — `R` is resolved from the setting, then `PATH`, then the common macOS
   framework locations.
-- **Working directory** — follows the current DSH session workspace unless you pin it
-  (`autoDetect`), so switching projects in DSH switches the tree and the R cwd.
+- **Working directory** — `autoDetect` (default **on**) makes it follow the current DSH
+  session workspace: switching projects in DSH moves the tree and the R cwd, and the panel
+  re-checks every 15 s without a reload. Turn the checkbox off (or pick a folder) to pin it.
+- **Script folder** — `scriptDirAuto` (default **on**) keeps drafts in `<workdir>/R`, or
+  `<project>/R` when the folder holds an `*.Rproj`. Untick it to write to a fixed `scriptDir`
+  (older installs pinned `scriptDir`; that stale value is now ignored while auto is on).
 - **Extra roots** — additional folders shown in the tree (read/write allowed).
 - **Plot size / resolution** — the PNG device parameters.
 - **env** — extra environment variables for the R process (JSON object).
