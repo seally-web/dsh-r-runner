@@ -57,7 +57,7 @@ assert.equal(typeof loaded.factory, 'function')
 const exports = loaded.factory(requireStub)
 assert.equal(typeof exports.apply, 'function')
 assert.ok(Array.isArray(exports.inject))
-for (const service of ['slots', 'locale', 'sidebarRightTabs', 'sidebarRight']) {
+for (const service of ['slots', 'locale', 'sidebarRightTabs', 'sidebarRight', 'sessions']) {
   assert.ok(exports.inject.includes(service), `inject lists ${service}`)
 }
 
