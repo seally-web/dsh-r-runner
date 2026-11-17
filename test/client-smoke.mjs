@@ -122,5 +122,24 @@ for (const platform of ['desktop:macos', 'desktop:windows', 'desktop:linux', 'we
 }
 assert.equal(shortcut.resolve().status, 'handled')
 
+// Session workspace ------------------------------------------------------
+const sessionCwd = '/Users/me/Documents/other-project'
+const sessionCtx = {
+  ...ctx,
+  sessions: {
+    list: {
+      getSnapshot: () => ({ byId: { 's-1': { cwd: sessionCwd } } }),
+      subscribe: () => () => {}
+    }
+  }
+}
+exports.__test.clearActiveCwd()
+assert.equal(exports.__test.withWorkspace('/r/api/state').includes('cwd='), false)
+body.body({ ctx: sessionCtx, sessionId: 's-1' })
+assert.equal(exports.__test.withWorkspace('/r/api/state'), `/r/api/state?cwd=${encodeURIComponent(sessionCwd)}`)
+assert.equal(exports.__test.withWorkspace('/r/api/tree?path=x'), `/r/api/tree?path=x&cwd=${encodeURIComponent(sessionCwd)}`)
+exports.__test.clearActiveCwd()
+assert.equal(exports.__test.withWorkspace('/r/api/state').includes('cwd='), false)
+
 console.log('client-smoke: ok')
 console.log('effect labels:', calls.effect.join(' | '))
