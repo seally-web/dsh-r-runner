@@ -133,6 +133,10 @@ const sessionCtx = {
     }
   }
 }
+// A body rendered with no props at all must still work: the panel used to read a
+// free `ctx` identifier that the module factory never defines (blank tab).
+const bare = body.body({})
+assert.ok(bare, 'body renders without props')
 exports.__test.clearActiveCwd()
 assert.equal(exports.__test.withWorkspace('/r/api/state').includes('cwd='), false)
 body.body({ ctx: sessionCtx, sessionId: 's-1' })

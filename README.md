@@ -8,7 +8,7 @@ Run R inside the DeepSeek Harness sidebar: a persistent R session, a file tree, 
 syntax-highlighted editor, a console, an environment table, and plot thumbnails —
 laid out like RStudio, with the keyboard habits of VS Code.
 
-> Status: v0.1.3 on [npm](https://www.npmjs.com/package/dsh-r-runner), macOS + R 4.6 tested. See [docs/PLAN.md](docs/PLAN.md) for the
+> Status: v0.1.4 on [npm](https://www.npmjs.com/package/dsh-r-runner), macOS + R 4.6 tested. See [docs/PLAN.md](docs/PLAN.md) for the
 > design notes and roadmap.
 
 ![Panel](docs/panel.png)
