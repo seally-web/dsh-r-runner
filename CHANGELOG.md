@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.6
+
+- Runs now carry the file they came from (`POST /r/api/run { code, path }`), so
+  `read.csv("claims.csv")` resolves against the script's folder instead of the
+  workspace root. `runInFileDir` actually takes effect, and an explicit `wd` wins.
+- Scripts that find themselves through `commandArgs()` (`--file=`) now work: the
+  driver attaches a shim for the duration of the run, in its own environment so a
+  leading `rm(list = ls())` cannot remove it.
+- A failed `cannot open file 'x'` run looks for that file in the script's folder and
+  its parent, and the panel offers a one-click "rerun from that directory" bar.
+- The session badge refreshes after a run, so an auto-started session no longer
+  claims "会话未启动".
+- `⌘/Ctrl+Shift+Enter` sources the whole file (plain `⌘Enter` still runs the
+  selection, or the buffer when nothing is selected).
+- Pressing run starts a stopped session instead of failing with "R session is not
+  running"; polls and 停止 still never boot it implicitly.
+- Settings notice when the workspace holds nothing but `.Rproj`, with a "use the
+  parent folder" button.
+
 ## 0.1.5
 
 - Fix: declare `sessions` in the client `inject` list. The client context refuses

@@ -96,7 +96,27 @@ variables <- function() {
   })
 }
 
-run_code <- function(code, wd = NULL, echo = NULL) {
+## A script that wants to know where it lives reads `commandArgs()` for `--file=`.
+## We execute text over a socket, so those scripts give up and run in whatever
+## directory happened to be current. Attach a shim — in its own environment, so the
+## script's `rm(list = ls())` cannot delete it — that reports the file the text came
+## from. RStudio's `rstudioapi` path stays untouched (it is not installed here).
+with_file_args <- function(file, code) {
+  if (is.null(file) || is.na(file) || !nzchar(file)) return(force(code))
+  path <- try(normalizePath(file, mustWork = FALSE), silent = TRUE)
+  if (inherits(path, "try-error") || !nzchar(path)) return(force(code))
+  shim <- new.env(parent = baseenv())
+  shim$commandArgs <- function(trailingOnly = FALSE) {
+    args <- base::commandArgs(trailingOnly = FALSE)
+    if (!any(grepl("^--file=", args))) args <- c(args, paste0("--file=", path))
+    args
+  }
+  env_name <- "dsh_r_runner:file"
+  suppressWarnings(attach(shim, name = env_name, warn.conflicts = FALSE))
+  tryCatch(force(code), finally = try(detach(env_name), silent = TRUE))
+}
+
+run_code <- function(code, wd = NULL, echo = NULL, file = NULL) {
   if (!is.null(echo)) opts$echo <<- isTRUE(echo)
   started <- Sys.time()
   before <- list.files(plot_dir, full.names = TRUE, pattern = "\\.png$")
@@ -112,7 +132,7 @@ run_code <- function(code, wd = NULL, echo = NULL) {
   # lines captured here travel back over the socket.
   captured <- capture.output({
     withCallingHandlers(
-      tryCatch({
+      with_file_args(file, tryCatch({
         exprs <- parse(text = code)
         for (expr in exprs) {
           value <- withVisible(eval(expr, envir = globalenv()))
@@ -123,7 +143,7 @@ run_code <- function(code, wd = NULL, echo = NULL) {
         status <<- "error"
         errmsg <<- conditionMessage(e)
         NULL
-      }),
+      })),
       warning = function(w) {
         warnings <<- c(warnings, paste0("Warning: ", conditionMessage(w)))
         invokeRestart("muffleWarning")
@@ -430,7 +450,7 @@ handle <- function(req) {
       }
       # source() inside run_code would re-setwd; here a wd is the caller's
       # choice and run_code restores the previous directory afterwards.
-      run_code(req$code %||% "", wd = req$wd, echo = req$echo)
+      run_code(req$code %||% "", wd = req$wd, echo = req$echo, file = req$file)
     },
     vars = list(ok = TRUE, variables = variables(), wd = getwd()),
     assign = {

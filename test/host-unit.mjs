@@ -18,6 +18,7 @@ import {
   fileKind,
   isAllowedPath,
   listRFiles,
+  looksLikeProjectShell,
   normalizeConfig,
   treeEntries,
 } from '../lib/runner.js'
@@ -112,7 +113,16 @@ try {
   clearHistory(home)
   assert.deepEqual(readHistory(home), [])
 
-  console.log('host-unit: ok')
+  // A folder holding only *.Rproj is a project shell: the panel offers its parent.
+const shellDir = mkdtempSync(join(tmpdir(), 'rr-shell-'))
+writeFileSync(join(shellDir, 'MTH303.Rproj'), 'Version: 1.0\n')
+writeFileSync(join(shellDir, '.Rhistory'), '')
+assert.equal(looksLikeProjectShell(shellDir), true)
+writeFileSync(join(shellDir, 'notes.md'), 'x')
+assert.equal(looksLikeProjectShell(shellDir), false)
+assert.equal(looksLikeProjectShell(join(shellDir, 'missing')), false)
+
+console.log('host-unit: ok')
 } finally {
   rmSync(dir, { recursive: true, force: true })
 }
